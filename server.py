@@ -22,6 +22,7 @@ from document_utils import (
     add_entry_to_index,
     update_entry_to_document,
     update_entry_to_index,
+    find_entry_by_text,
 )
 
 # Initialize FastMCP server
@@ -221,13 +222,19 @@ def add_entry(
 def update_entry(
     full_name: str,
     year: int,
-    entry_id: str,
     new_text: str,
+    entry_id: Optional[str] = None,
+    old_text: Optional[str] = None,
+    section_path: Optional[str] = None,
+    occurrence_index: int = 0,
     workspace_root: Optional[str] = None
 ) -> str:
     """Update an existing entry in the brag document.
     
-    Updates the text content of an existing entry identified by its entry_id.
+    Updates the text content of an existing entry. You can identify the entry in two ways:
+    1. By entry_id (preferred): Provide the unique entry_id
+    2. By text and section (fallback): Provide old_text and section_path
+    
     The entry must exist in the document and index file.
     
     Use this tool when the user asks to update, modify, or change an existing entry.
@@ -235,8 +242,11 @@ def update_entry(
     Args:
         full_name: Full name of the person (e.g., "John Doe")
         year: Year for the brag document (e.g., 2024)
-        entry_id: Unique identifier of the entry to update
         new_text: New text content for the entry
+        entry_id: (Optional) Unique identifier of the entry to update (preferred method)
+        old_text: (Optional) Current text content of the entry (used with section_path)
+        section_path: (Optional) Section path where the entry is located (used with old_text)
+        occurrence_index: (Optional) Which occurrence to update if multiple matches (0-based, default 0)
         workspace_root: Optional root directory for documents (defaults to current working directory)
     
     Returns:
@@ -261,20 +271,49 @@ def update_entry(
                 "message": "The document may not have any entries yet. Please add an entry first."
             }, indent=2)
         
+        # Determine which method to use for finding the entry
+        if entry_id:
+            # Method 1: Update by entry_id (preferred)
+            resolved_entry_id = entry_id
+        elif old_text and section_path:
+            # Method 2: Find entry by text and section (fallback)
+            try:
+                resolved_entry_id = find_entry_by_text(
+                    index_path,
+                    old_text,
+                    section_path,
+                    occurrence_index
+                )
+                if resolved_entry_id is None:
+                    return json.dumps({
+                        "error": f"Entry not found with text '{old_text}' in section '{section_path}'.",
+                        "message": "Please verify the text and section path are correct."
+                    }, indent=2)
+            except ValueError as e:
+                return json.dumps({
+                    "error": str(e),
+                    "message": "Try specifying a different occurrence_index or use entry_id instead."
+                }, indent=2)
+        else:
+            return json.dumps({
+                "error": "Either entry_id or (old_text + section_path) must be provided.",
+                "message": "Provide entry_id for direct lookup, or old_text and section_path for text-based search."
+            }, indent=2)
+        
         # Load index to get entry information
         index_data = load_index(index_path)
         
         # Check if entry exists
-        if entry_id not in index_data["entries"]:
+        if resolved_entry_id not in index_data["entries"]:
             return json.dumps({
-                "error": f"Entry with ID '{entry_id}' not found.",
-                "message": "The entry may have been deleted or the entry_id is incorrect."
+                "error": f"Entry with ID '{resolved_entry_id}' not found.",
+                "message": "The entry may have been deleted or the identifier is incorrect."
             }, indent=2)
         
         # Get entry data
-        entry_data = index_data["entries"][entry_id]
+        entry_data = index_data["entries"][resolved_entry_id]
         paragraph_index = entry_data["paragraph_index"]
-        section_path = entry_data["section_path"]
+        entry_section_path = entry_data["section_path"]
         
         # Update entry in document
         update_entry_to_document(
@@ -286,17 +325,17 @@ def update_entry(
         # Update entry in index
         update_entry_to_index(
             index_path,
-            entry_id,
+            resolved_entry_id,
             new_text
         )
         
         # Reload to get updated timestamp
         updated_index_data = load_index(index_path)
-        updated_entry = updated_index_data["entries"][entry_id]
+        updated_entry = updated_index_data["entries"][resolved_entry_id]
         
         return json.dumps({
-            "entry_id": entry_id,
-            "section_path": section_path,
+            "entry_id": resolved_entry_id,
+            "section_path": entry_section_path,
             "text": new_text,
             "updated_at": updated_entry["updated_at"]
         }, indent=2)
