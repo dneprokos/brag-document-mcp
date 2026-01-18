@@ -1,2 +1,2 @@
 fastmcp
-python-docx
+python-docx-ng

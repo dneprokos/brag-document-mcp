@@ -249,17 +249,23 @@ Output
 
 bragdoc.add_entry
 
-Status: [ ] Not implemented
+Status: [x] Implemented
 
 Adds a new entry.
 
 Input
+
+- full_name
+
+- year
 
 - section_path
 
 - text
 
 - position (optional)
+
+- workspace_root (optional)
 
 Output
 
@@ -268,6 +274,13 @@ Output
 - section_path
 
 - text
+
+- position
+
+**Example Prompts:**
+- "Add an entry to the Projects section: Led the migration to microservices architecture"
+- "Add 'Published article on AI trends' to the Articles section"
+- "Add entry to Projects: Implemented new authentication system"
 
 bragdoc.update_entry
 

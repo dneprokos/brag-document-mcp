@@ -5,7 +5,7 @@ description = "MCP server for managing Brag Documents"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp",
-    "python-docx",
+    "python-docx-ng",
 ]
 
 [build-system]
