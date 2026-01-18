@@ -17,8 +17,11 @@ from document_utils import (
     get_template_path,
     ensure_index_file,
     generate_entry_id,
+    load_index,
     add_entry_to_document,
     add_entry_to_index,
+    update_entry_to_document,
+    update_entry_to_index,
 )
 
 # Initialize FastMCP server
@@ -211,6 +214,108 @@ def add_entry(
     except Exception as e:
         return json.dumps({
             "error": f"Failed to add entry: {str(e)}"
+        }, indent=2)
+
+
+@mcp.tool()
+def update_entry(
+    full_name: str,
+    year: int,
+    entry_id: str,
+    new_text: str,
+    workspace_root: Optional[str] = None
+) -> str:
+    """Update an existing entry in the brag document.
+    
+    Updates the text content of an existing entry identified by its entry_id.
+    The entry must exist in the document and index file.
+    
+    Use this tool when the user asks to update, modify, or change an existing entry.
+    
+    Args:
+        full_name: Full name of the person (e.g., "John Doe")
+        year: Year for the brag document (e.g., 2024)
+        entry_id: Unique identifier of the entry to update
+        new_text: New text content for the entry
+        workspace_root: Optional root directory for documents (defaults to current working directory)
+    
+    Returns:
+        JSON string with entry_id, section_path, text, and updated_at timestamp
+    """
+    try:
+        # Get paths
+        doc_path = get_document_path(full_name, year, workspace_root)
+        index_path = get_index_path(full_name, year, workspace_root)
+        
+        # Check if document exists
+        if not doc_path.exists():
+            return json.dumps({
+                "error": f"Document not found for {full_name}, year {year} at {doc_path}.",
+                "message": "Please create the document first using create_brag_document tool."
+            }, indent=2)
+        
+        # Check if index exists
+        if not index_path.exists():
+            return json.dumps({
+                "error": f"Index file not found for {full_name}, year {year}.",
+                "message": "The document may not have any entries yet. Please add an entry first."
+            }, indent=2)
+        
+        # Load index to get entry information
+        index_data = load_index(index_path)
+        
+        # Check if entry exists
+        if entry_id not in index_data["entries"]:
+            return json.dumps({
+                "error": f"Entry with ID '{entry_id}' not found.",
+                "message": "The entry may have been deleted or the entry_id is incorrect."
+            }, indent=2)
+        
+        # Get entry data
+        entry_data = index_data["entries"][entry_id]
+        paragraph_index = entry_data["paragraph_index"]
+        section_path = entry_data["section_path"]
+        
+        # Update entry in document
+        update_entry_to_document(
+            doc_path,
+            paragraph_index,
+            new_text
+        )
+        
+        # Update entry in index
+        update_entry_to_index(
+            index_path,
+            entry_id,
+            new_text
+        )
+        
+        # Reload to get updated timestamp
+        updated_index_data = load_index(index_path)
+        updated_entry = updated_index_data["entries"][entry_id]
+        
+        return json.dumps({
+            "entry_id": entry_id,
+            "section_path": section_path,
+            "text": new_text,
+            "updated_at": updated_entry["updated_at"]
+        }, indent=2)
+        
+    except KeyError as e:
+        return json.dumps({
+            "error": f"Entry not found: {str(e)}"
+        }, indent=2)
+    except IndexError as e:
+        return json.dumps({
+            "error": f"Document structure issue: {str(e)}"
+        }, indent=2)
+    except ValueError as e:
+        return json.dumps({
+            "error": str(e)
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({
+            "error": f"Failed to update entry: {str(e)}"
         }, indent=2)
 
 

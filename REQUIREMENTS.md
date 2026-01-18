@@ -284,15 +284,38 @@ Output
 
 bragdoc.update_entry
 
-Status: [ ] Not implemented
+Status: [x] Implemented
 
 Updates an existing entry.
 
 Input
 
+- full_name
+
+- year
+
 - entry_id
 
 - new_text
+
+- workspace_root (optional)
+
+Output
+
+- entry_id
+
+- section_path
+
+- text
+
+- updated_at
+
+**Example Prompts:**
+- "Update entry with ID abc-123 to: Led the successful migration to microservices architecture"
+- "Change the entry abc-123 to: Published article on AI trends in Tech Weekly"
+- "Update entry abc-123: Implemented new authentication system with OAuth2"
+- "Update entry 6bc9333d-2c05-4258-9d68-92a1777385ac to: Speaker of Test Warez conference 2026"
+- "Change entry 6bc9333d-2c05-4258-9d68-92a1777385ac: Updated project description with new metrics"
 
 bragdoc.delete_entry
 

@@ -465,6 +465,158 @@ def add_entry_to_document(
     return insert_idx
 
 
+def update_entry_to_document(
+    doc_path: Path,
+    paragraph_index: int,
+    new_text: str
+) -> None:
+    """Update an entry in the document at a specific paragraph index.
+    
+    Args:
+        doc_path: Path to the DOCX document.
+        paragraph_index: Index of the paragraph to update.
+        new_text: New text content for the entry (will be prefixed with bullet).
+    
+    Raises:
+        FileNotFoundError: If the document doesn't exist.
+        IndexError: If the paragraph index is out of range.
+        ValueError: If the paragraph cannot be updated.
+    """
+    # Open document with automatic style error recovery
+    try:
+        doc = Document(str(doc_path))
+    except KeyError as e:
+        if "List Bullet" in str(e):
+            # Fix missing List Bullet style using opc package
+            try:
+                from docx import opc
+                from docx.oxml import parse_xml
+                import xml.etree.ElementTree as ET
+                
+                package = opc.Package.open(str(doc_path))
+                document_part = package.main_document_part
+                
+                # Get or create styles part
+                try:
+                    styles_part = document_part.part_related_by(
+                        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles'
+                    )
+                    styles_root = parse_xml(styles_part.blob)
+                except KeyError:
+                    from docx.opc.part import Part
+                    from docx.opc.constants import CONTENT_TYPE as CT, RELATIONSHIP_TYPE as RT
+                    
+                    styles_xml = (
+                        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                        '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                        '<w:style w:type="paragraph" w:styleId="ListBullet">'
+                        '<w:name w:val="List Bullet"/>'
+                        '<w:basedOn w:val="Normal"/>'
+                        '<w:qFormat/>'
+                        '</w:style>'
+                        '</w:styles>'
+                    )
+                    styles_part = Part.new(
+                        package,
+                        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles',
+                        CT.WML_STYLES,
+                        parse_xml(styles_xml)
+                    )
+                    document_part.relate_to(styles_part, RT.STYLES)
+                    package.save(str(doc_path))
+                    doc = Document(str(doc_path))
+                else:
+                    ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+                    style_elements = styles_root.findall('.//w:style', ns)
+                    has_list_bullet = any(
+                        (elem.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}styleId')
+                         or elem.get('styleId', '')) == 'ListBullet'
+                        for elem in style_elements
+                    )
+                    
+                    if not has_list_bullet:
+                        style_elem = ET.SubElement(styles_root, '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}style')
+                        style_elem.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type', 'paragraph')
+                        style_elem.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}styleId', 'ListBullet')
+                        
+                        name_elem = ET.SubElement(style_elem, '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}name')
+                        name_elem.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val', 'List Bullet')
+                        
+                        based_on = ET.SubElement(style_elem, '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}basedOn')
+                        based_on.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val', 'Normal')
+                        
+                        ET.SubElement(style_elem, '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}qFormat')
+                        
+                        styles_part.blob = styles_root
+                        package.save(str(doc_path))
+                    
+                    doc = Document(str(doc_path))
+            except Exception:
+                raise ValueError(
+                    f"Document has style issues. The 'List Bullet' style is referenced but not defined. "
+                    f"Please fix the template file or open '{doc_path}' in Microsoft Word and apply the 'List Bullet' style."
+                ) from e
+        else:
+            raise
+    
+    # Check paragraph index is valid
+    if paragraph_index < 0 or paragraph_index >= len(doc.paragraphs):
+        raise IndexError(f"Paragraph index {paragraph_index} is out of range. Document has {len(doc.paragraphs)} paragraphs.")
+    
+    # Get the paragraph to update
+    para = doc.paragraphs[paragraph_index]
+    
+    # Check if paragraph already has bullet formatting
+    # If it starts with bullet, preserve it; otherwise add it
+    current_text = para.text.strip()
+    if current_text.startswith('•') or current_text.startswith('-'):
+        # Remove existing bullet and whitespace
+        current_text = current_text.lstrip('•-').strip()
+    
+    # Update paragraph with new text (with bullet)
+    bullet_text = '• ' + new_text
+    para.clear()
+    para.add_run(bullet_text)
+    
+    # Ensure formatting is preserved
+    para.paragraph_format.left_indent = Pt(18)
+    
+    # Save the document
+    doc.save(str(doc_path))
+
+
+def update_entry_to_index(
+    index_path: Path,
+    entry_id: str,
+    new_text: str
+) -> None:
+    """Update an entry in the index file.
+    
+    Args:
+        index_path: Path to the index file.
+        entry_id: Unique identifier for the entry to update.
+        new_text: New text content for the entry.
+    
+    Raises:
+        KeyError: If the entry_id is not found in the index.
+    """
+    index_data = load_index(index_path)
+    
+    # Check if entry exists
+    if entry_id not in index_data["entries"]:
+        raise KeyError(f"Entry with ID '{entry_id}' not found in index.")
+    
+    # Update entry data
+    entry_data = index_data["entries"][entry_id]
+    entry_data["text"] = new_text
+    entry_data["updated_at"] = datetime.now().isoformat()
+    
+    # Update index metadata
+    index_data["updated_at"] = datetime.now().isoformat()
+    
+    save_index(index_path, index_data)
+
+
 def initialize_document_from_template(
     doc_path: Path,
     full_name: str,
@@ -556,12 +708,17 @@ def initialize_document_from_template(
                     return
     
     # Replace title placeholders
+    # Title should match the filename format: "Brag Document - <Full Name> (<Year>)"
     # Find and update the title paragraph (usually first paragraph)
+    # The template may use em dash (–) or regular dash (-), we'll use regular dash to match filename
     for para in doc.paragraphs[:5]:  # Check first few paragraphs
         text = para.text
-        if "<Full Name>" in text or "<Year>" in text:
-            # Replace placeholders
-            new_text = text.replace("<Full Name>", full_name).replace("<Year>", str(year))
+        # Check if this looks like the title paragraph (contains placeholders)
+        if "<Full Name>" in text or "<Year>" in text or ("Brag Document" in text and ("<" in text or "Full Name" in text)):
+            # Replace placeholders - title should match filename format exactly
+            # Filename format: "Brag Document - <Full Name> (<Year>)"
+            # Replace any dash variant (em dash, en dash, regular dash) with regular dash
+            new_text = f"Brag Document - {full_name} ({year})"
             # Clear and set new text
             para.clear()
             para.add_run(new_text)
