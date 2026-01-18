@@ -742,6 +742,51 @@ def initialize_document_from_template(
     doc.save(str(doc_path))
 
 
+def find_entry_by_text(
+    index_path: Path,
+    text: str,
+    section_path: str,
+    occurrence_index: int = 0
+) -> Optional[str]:
+    """Find an entry ID by matching text and section path.
+    
+    Searches for entries in the index that match the given text and section path.
+    If multiple matches are found, returns the entry at the specified occurrence index.
+    
+    Args:
+        index_path: Path to the index file.
+        text: Text content to search for (exact match).
+        section_path: Section path where the entry should be located.
+        occurrence_index: Which occurrence to return if multiple matches (0-based, default 0).
+    
+    Returns:
+        Entry ID if found, None otherwise.
+    
+    Raises:
+        ValueError: If occurrence_index is out of range for the number of matches.
+    """
+    index_data = load_index(index_path)
+    
+    # Find all entries matching text and section
+    matching_entry_ids = []
+    for entry_id, entry_data in index_data["entries"].items():
+        if (entry_data["section_path"] == section_path and 
+            entry_data["text"] == text):
+            matching_entry_ids.append(entry_id)
+    
+    if not matching_entry_ids:
+        return None
+    
+    # Check if occurrence_index is valid
+    if occurrence_index >= len(matching_entry_ids):
+        raise ValueError(
+            f"Occurrence index {occurrence_index} is out of range. "
+            f"Found {len(matching_entry_ids)} matching entries."
+        )
+    
+    return matching_entry_ids[occurrence_index]
+
+
 def add_entry_to_index(
     index_path: Path,
     entry_id: str,

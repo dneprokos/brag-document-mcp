@@ -140,21 +140,31 @@ Adds a new entry (bullet point) to a specified section in the brag document. The
 
 #### `bragdoc.update_entry`
 
-Updates an existing entry in the brag document by its entry ID. The entry must have been previously added and have an entry_id.
+Updates an existing entry in the brag document. You can identify the entry in two ways:
+1. **By entry_id** (preferred): Use the unique entry ID
+2. **By text and section** (fallback): Specify the current text and section path
 
 **Parameters:**
 - `full_name`: Full name of the person (e.g., "John Doe")
 - `year`: Year for the brag document (e.g., 2024)
-- `entry_id`: Unique identifier of the entry to update
 - `new_text`: New text content for the entry
+- `entry_id`: (Optional) Unique identifier of the entry to update (preferred method)
+- `old_text`: (Optional) Current text content of the entry (used with section_path)
+- `section_path`: (Optional) Section path where the entry is located (used with old_text)
+- `occurrence_index`: (Optional) Which occurrence to update if multiple matches (0-based, default 0)
 - `workspace_root`: (Optional) Custom workspace directory
 
-**Example Prompts:**
+**Example Prompts (by entry_id):**
 - "Update entry with ID abc-123 to: Led the successful migration to microservices architecture"
 - "Change the entry abc-123 to: Published article on AI trends in Tech Weekly"
 - "Update entry abc-123: Implemented new authentication system with OAuth2"
 - "Update entry 6bc9333d-2c05-4258-9d68-92a1777385ac to: Speaker of Test Warez conference 2026"
-- "Change entry 6bc9333d-2c05-4258-9d68-92a1777385ac: Updated project description with new metrics"
+
+**Example Prompts (by text and section):**
+- "Update 'Speaker of Test Warez conference 2025' in Conferences section to: Speaker of Test Warez conference 2026"
+- "Change 'Old project description' in Projects section to: New project description with updated metrics"
+- "Update the entry 'Published article on AI trends' in Outside of work/Articles to: Published article on AI trends in Tech Weekly"
+- "Change 'Mentored 3 junior developers' in Collaboration & mentorship section to: Mentored 5 junior developers this quarter"
 
 ## Project Structure
 

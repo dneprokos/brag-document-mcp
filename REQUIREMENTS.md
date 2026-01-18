@@ -161,13 +161,15 @@ Entries are usually added as bullet points.
 
 7.4 Update entry
 
+Status: [x] Implemented
+
 Preferred:
 
-- Update by entry_id
+- Update by entry_id [x] Implemented
 
-Fallback (if needed):
+Fallback:
 
-- Match by text + occurrence index
+- Match by text + section_path + occurrence index [x] Implemented
 
 7.5 Delete entry
 
@@ -189,200 +191,30 @@ Fallback:
 
 8. MCP Tools (v2)
 
-bragdoc.create_brag_document
-
-Status: [x] Implemented
-
-Creates document if missing.
-
-Input
-
-- full_name
-
-- year
-
-- workspace_root (optional)
-
-Output
-
-- status: created | exists
-
-- document_path
-
-- index_path
-
-bragdoc.get_outline
-
-Status: [ ] Not implemented
-
-Returns document structure.
-
-Output
-
-- sections
-
-- entries per section
-
-- entry IDs (if available)
-
-bragdoc.get_section
-
-Status: [ ] Not implemented
-
-Returns content of a specific section.
-
-Input
-
-- full_name
-
-- year
-
-- section_path
-
-- workspace_root (optional)
-
-Output
-
-- section_path
-
-- entries (array of entry objects with entry_id, text, created_at, updated_at)
-
-bragdoc.add_entry
-
-Status: [x] Implemented
-
-Adds a new entry.
-
-Input
-
-- full_name
-
-- year
-
-- section_path
-
-- text
-
-- position (optional)
-
-- workspace_root (optional)
-
-Output
-
-- entry_id
-
-- section_path
-
-- text
-
-- position
+| Tool Name | Status | Description | Input Parameters | Output |
+|-----------|--------|-------------|-------------------|--------|
+| `bragdoc.create_brag_document` | ✅ Implemented | Creates document from template if missing. Never overwrites existing documents. | • `full_name` (required)<br>• `year` (required)<br>• `workspace_root` (optional) | • `status`: "created" \| "exists"<br>• `document_path`<br>• `index_path` |
+| `bragdoc.get_outline` | ❌ Not implemented | Returns document structure with sections and entries. | • `full_name` (required)<br>• `year` (required)<br>• `workspace_root` (optional) | • `sections`<br>• `entries` per section<br>• `entry_ids` (if available) |
+| `bragdoc.get_section` | ❌ Not implemented | Returns content of a specific section with all entries. | • `full_name` (required)<br>• `year` (required)<br>• `section_path` (required)<br>• `workspace_root` (optional) | • `section_path`<br>• `entries`: array of entry objects with `entry_id`, `text`, `created_at`, `updated_at` |
+| `bragdoc.add_entry` | ✅ Implemented | Adds a new entry (bullet point) to a specified section. Appends by default. | • `full_name` (required)<br>• `year` (required)<br>• `section_path` (required)<br>• `text` (required)<br>• `position` (optional, 0-based)<br>• `workspace_root` (optional) | • `entry_id`<br>• `section_path`<br>• `text`<br>• `position` |
+| `bragdoc.update_entry` | ✅ Implemented | Updates an existing entry. Supports two methods:<br>1. By `entry_id` (preferred)<br>2. By `old_text` + `section_path` (fallback) | • `full_name` (required)<br>• `year` (required)<br>• `new_text` (required)<br>• `entry_id` (optional, preferred)<br>• `old_text` (optional, used with `section_path`)<br>• `section_path` (optional, used with `old_text`)<br>• `occurrence_index` (optional, default 0)<br>• `workspace_root` (optional) | • `entry_id`<br>• `section_path`<br>• `text`<br>• `updated_at` |
+| `bragdoc.delete_entry` | ❌ Not implemented | Deletes an entry from the document. | • `full_name` (required)<br>• `year` (required)<br>• `entry_id` (required)<br>• `workspace_root` (optional) | • `entry_id`<br>• `status`: "deleted" |
 
 **Example Prompts:**
-- "Add an entry to the Projects section: Led the migration to microservices architecture"
-- "Add 'Published article on AI trends' to the Articles section"
-- "Add entry to Projects: Implemented new authentication system"
 
-bragdoc.update_entry
-
-Status: [x] Implemented
-
-Updates an existing entry.
-
-Input
-
-- full_name
-
-- year
-
-- entry_id
-
-- new_text
-
-- workspace_root (optional)
-
-Output
-
-- entry_id
-
-- section_path
-
-- text
-
-- updated_at
-
-**Example Prompts:**
-- "Update entry with ID abc-123 to: Led the successful migration to microservices architecture"
-- "Change the entry abc-123 to: Published article on AI trends in Tech Weekly"
-- "Update entry abc-123: Implemented new authentication system with OAuth2"
-- "Update entry 6bc9333d-2c05-4258-9d68-92a1777385ac to: Speaker of Test Warez conference 2026"
-- "Change entry 6bc9333d-2c05-4258-9d68-92a1777385ac: Updated project description with new metrics"
-
-bragdoc.delete_entry
-
-Status: [ ] Not implemented
-
-Deletes an entry.
-
-Input
-
-- entry_id
+- **create_brag_document**: "Create a brag document for John Doe for year 2024"
+- **add_entry**: "Add an entry to the Projects section: Led the migration to microservices architecture"
+- **update_entry (by ID)**: "Update entry with ID abc-123 to: Led the successful migration to microservices architecture"
+- **update_entry (by text)**: "Update 'Speaker of Test Warez conference 2025' in Conferences section to: Speaker of Test Warez conference 2026"
 
 9. MCP Resources
-Document resource
 
-Status: [ ] Not implemented
-
-```
-bragdoc://document/<full_name>/<year>
-```
-
-Contains:
-
-- document path
-
-- last modified time
-
-Index resource
-
-Status: [ ] Not implemented
-
-```
-bragdoc://index/<full_name>/<year>
-```
-
-Contains:
-
-- section registry
-
-- entry ID mappings
-
-- minimal positioning info
-
-Section schema resource
-
-Status: [ ] Not implemented
-
-```
-bragdoc://schema/sections
-```
-
-Static list of supported sections and paths.
-
-Section resource
-
-Status: [ ] Not implemented
-
-```
-bragdoc://section/<full_name>/<year>/<section_path>
-```
-
-Contains:
-
-- section_path
-
-- entries in that section
-
-- entry IDs and metadata
+| Resource URI | Status | Description | Contains |
+|--------------|--------|-------------|----------|
+| `bragdoc://document/<full_name>/<year>` | ❌ Not implemented | Document metadata resource | • `document_path`<br>• `last_modified_time`<br>• `created_at` |
+| `bragdoc://index/<full_name>/<year>` | ❌ Not implemented | Index file resource with entry mappings | • `section_registry`<br>• `entry_id_mappings`<br>• `paragraph_indices`<br>• `metadata` |
+| `bragdoc://schema/sections` | ❌ Not implemented | Static schema resource listing all supported sections | • `top_level_sections`: array of section names<br>• `nested_sections`: array of nested section paths<br>• `section_hierarchy`: complete section structure |
+| `bragdoc://section/<full_name>/<year>/<section_path>` | ❌ Not implemented | Section-specific resource with entries | • `section_path`<br>• `entries`: array of entry objects<br>• `entry_ids` and metadata<br>• `entry_count` |
 
 10. Google Drive Sync (future)
 Planned sync modes
