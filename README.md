@@ -138,6 +138,24 @@ Adds a new entry (bullet point) to a specified section in the brag document. The
 - "Add entry to Projects: Implemented new authentication system"
 - "Add to Collaboration & mentorship: Mentored 3 junior developers this quarter"
 
+#### `bragdoc.update_entry`
+
+Updates an existing entry in the brag document by its entry ID. The entry must have been previously added and have an entry_id.
+
+**Parameters:**
+- `full_name`: Full name of the person (e.g., "John Doe")
+- `year`: Year for the brag document (e.g., 2024)
+- `entry_id`: Unique identifier of the entry to update
+- `new_text`: New text content for the entry
+- `workspace_root`: (Optional) Custom workspace directory
+
+**Example Prompts:**
+- "Update entry with ID abc-123 to: Led the successful migration to microservices architecture"
+- "Change the entry abc-123 to: Published article on AI trends in Tech Weekly"
+- "Update entry abc-123: Implemented new authentication system with OAuth2"
+- "Update entry 6bc9333d-2c05-4258-9d68-92a1777385ac to: Speaker of Test Warez conference 2026"
+- "Change entry 6bc9333d-2c05-4258-9d68-92a1777385ac: Updated project description with new metrics"
+
 ## Project Structure
 
 ```
