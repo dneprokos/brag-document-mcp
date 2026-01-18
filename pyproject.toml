@@ -1,0 +1,13 @@
+[project]
+name = "brag-document-mcp"
+version = "0.1.0"
+description = "MCP server for managing Brag Documents"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp",
+    "python-docx",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
