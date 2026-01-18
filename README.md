@@ -48,7 +48,7 @@ After installation, add `uv` to your PATH or restart your terminal.
 
 3. Install dependencies:
    ```bash
-   uv pip install --python .venv/Scripts/python.exe fastmcp python-docx
+   uv pip install --python .venv/Scripts/python.exe fastmcp python-docx-ng
    ```
    
    Or using the requirements file:
@@ -108,7 +108,7 @@ Once configured, you can use the tools in Cursor's chat interface. The AI will a
 
 #### `bragdoc.create_brag_document`
 
-Creates a brag document from the template if it doesn't exist. Never overwrites existing documents.
+Creates a brag document from the template if it doesn't exist. Never overwrites existing documents. Automatically replaces placeholders in the title and removes example entries.
 
 **Parameters:**
 - `full_name`: Full name of the person (e.g., "John Doe")
@@ -119,6 +119,24 @@ Creates a brag document from the template if it doesn't exist. Never overwrites 
 - "Create a brag document for John Doe for year 2024"
 - "Create a brag document for Jane Smith for 2024"
 - "Set up a brag document for Alice Johnson, year 2024"
+
+#### `bragdoc.add_entry`
+
+Adds a new entry (bullet point) to a specified section in the brag document. The entry is appended by default, or inserted at a specific position if provided.
+
+**Parameters:**
+- `full_name`: Full name of the person (e.g., "John Doe")
+- `year`: Year for the brag document (e.g., 2024)
+- `section_path`: Section where to add the entry (e.g., "Projects", "Outside of work/Articles")
+- `text`: Text content of the entry
+- `position`: (Optional) Position index to insert at (0-based). If None, appends at end.
+- `workspace_root`: (Optional) Custom workspace directory
+
+**Example Prompts:**
+- "Add an entry to the Projects section: Led the migration to microservices architecture"
+- "Add 'Published article on AI trends' to the Articles section"
+- "Add entry to Projects: Implemented new authentication system"
+- "Add to Collaboration & mentorship: Mentored 3 junior developers this quarter"
 
 ## Project Structure
 
@@ -172,7 +190,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for detailed specifications.
 ## Dependencies
 
 * **fastmcp**: FastMCP framework for building MCP servers
-* **python-docx**: Library for working with DOCX files
+* **python-docx-ng**: Library for working with DOCX files (fork of python-docx with improved style handling)
 
 ## Troubleshooting
 
